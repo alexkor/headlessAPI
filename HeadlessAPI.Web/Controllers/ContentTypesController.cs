@@ -8,10 +8,10 @@ namespace HeadlessAPI.Web.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ValuesController : ControllerBase
+    public class ContentTypesController : ControllerBase
     {
         private IRepository _repo;
-        public ValuesController(IRepository repository) => _repo = repository;
+        public ContentTypesController(IRepository repository) => _repo = repository;
 
         // GET api/values
         [HttpGet]
@@ -23,11 +23,11 @@ namespace HeadlessAPI.Web.Controllers
 
         // POST api/values
         [HttpPost]
-        public void Post([FromBody] ContentType value) => _repo.UpdateContentType(value);
+        public void Post([FromBody] ContentType value) => _repo.CreateContentType(value);
 
         // PUT api/values/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] ContentType value) => _repo.CreateContentType(value);
+        public void Put(int id, [FromBody] ContentType value) => _repo.UpdateContentType(id, value);
 
         // DELETE api/values/5
         [HttpDelete("{id}")]

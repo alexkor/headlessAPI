@@ -106,5 +106,45 @@ namespace HeadlessAPI.DataProvider
             var sqlCommand = new SqlCommand(command, _conn);
             sqlCommand.ExecuteNonQuery();
         }
+
+        public void UpdateContentType(int id, ContentType value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public ICollection<string> GetAllItems(string tableName)
+        {
+            string command = $@"SELECT * FROM {tableName}";
+            var sqlCommand = new SqlCommand(command, _conn);
+            using (var reader = sqlCommand.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+
+                }
+
+                return null;
+            }
+        }
+
+        public string GetItem(string tableName, int id)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void UpdateItem(string tableName, int id, string jsonItem)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int CreateItem(string tableName, string jsonItem)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void DeleteItem(string tablename, int id)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

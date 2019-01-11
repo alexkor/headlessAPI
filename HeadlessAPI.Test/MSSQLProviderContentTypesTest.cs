@@ -6,10 +6,10 @@ using Newtonsoft.Json;
 
 namespace HeadlessAPI.Test
 {
-    public class MSSQLProviderTest
+    public partial class MSSQLProviderContentTypesTest
     {
         private IRepository _repo;
-        public MSSQLProviderTest()
+        public MSSQLProviderContentTypesTest()
         {
             _repo = new MSSQLProvider();
 
