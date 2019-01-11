@@ -3,6 +3,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Linq;
 
 namespace HeadlessAPI.DataProvider
 {
@@ -15,21 +16,35 @@ namespace HeadlessAPI.DataProvider
             _conn.Open();
         }
 
-        public void CreateContentType(ContentType contentType)
+        public void ClearTable(string tableName)
         {
-            List<string> columnScheme = new List<string>();
-            foreach (var column in JsonConvert.DeserializeObject<Dictionary<string, string>>(contentType.Columns))
-            {
-                columnScheme.Add($"[{column.Key}] [{column.Value}]");
-            }
-            string command = $@"CREATE TABLE {contentType.Name} ([Id] [int] IDENTITY(1,1) PRIMARY KEY, {string.Join(',', columnScheme)})";
+            string command = $@"TRUNCATE TABLE {tableName}";
+            var sqlCommand = new SqlCommand(command, _conn);
+            sqlCommand.ExecuteNonQuery();
+        }
+
+        public void DeleteTable(string tableName)
+        {
+            string command = $@"DROP TABLE {tableName}";
+            var sqlCommand = new SqlCommand(command, _conn);
+            sqlCommand.ExecuteNonQuery();
+        }
+
+        public int CreateContentType(ContentType contentType)
+        {
+            string columnScheme = string.Join(',', contentType.Columns.Select(col => $"[{col.Name}] [{col.Type}]"));
+            string command = $@"CREATE TABLE {contentType.Name} ([Id] [int] IDENTITY(1,1) PRIMARY KEY, {columnScheme})";
             var sqlCommand = new SqlCommand(command, _conn);
             sqlCommand.ExecuteNonQuery();
 
-            var scheme = JsonConvert.SerializeObject(contentType);
-            command = $"INSERT INTO ContentTypes ([Scheme]) VALUES ('{scheme}')";
+            var scheme = JsonConvert.SerializeObject(contentType.Columns);
+            command = $"INSERT INTO ContentTypes ([Name], [Columns]) OUTPUT Inserted.ID VALUES ('{contentType.Name}', '{scheme}')";
             sqlCommand = new SqlCommand(command, _conn);
-            sqlCommand.ExecuteNonQuery();
+            using (var reader = sqlCommand.ExecuteReader())
+            {
+                reader.Read();
+                return (int)reader[0];
+            }
         }
 
         public void DeleteContentType(int id)
@@ -48,15 +63,17 @@ namespace HeadlessAPI.DataProvider
         public ICollection<ContentType> GetAllContentTypes()
         {
             ICollection<ContentType> contentTypes = new List<ContentType>();
-            string command = $@"SELECT [Scheme] FROM ContentTypes";
+            string command = $@"SELECT * FROM ContentTypes";
             var sqlCommand = new SqlCommand(command, _conn);
             using (var reader = sqlCommand.ExecuteReader())
             {
                 while (reader.Read())
                 {
-                    var scheme = reader.GetFieldValue<string>(0);
-                    var contentType = JsonConvert.DeserializeObject<ContentType>(scheme);
-                    contentTypes.Add(contentType);
+                    contentTypes.Add(new ContentType
+                    {
+                        Name = (string)reader["Name"],
+                        Columns = JsonConvert.DeserializeObject<ICollection<Column>>((string)reader["Columns"])
+                    });
                 }
             }
 
@@ -65,7 +82,7 @@ namespace HeadlessAPI.DataProvider
 
         public ContentType GetContentType(int id)
         {
-            string command = $@"SELECT TOP 1 [Scheme] FROM ContentTypes WHERE Id = {id}";
+            string command = $@"SELECT TOP 1 * FROM ContentTypes WHERE Id = {id}";
             var sqlCommand = new SqlCommand(command, _conn);
             using (var reader = sqlCommand.ExecuteReader())
             {
@@ -74,7 +91,7 @@ namespace HeadlessAPI.DataProvider
                 {
                     Id = (int)reader["Id"],
                     Name = (string)reader["Name"],
-                    Columns = (string)reader["Columns"],
+                    Columns = JsonConvert.DeserializeObject<ICollection<Column>>((string)reader["Columns"]),
                 };
                 return contentType;
             }

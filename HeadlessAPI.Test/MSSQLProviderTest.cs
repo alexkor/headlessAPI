@@ -8,52 +8,65 @@ namespace HeadlessAPI.Test
 {
     public class MSSQLProviderTest
     {
+        private IRepository _repo;
         public MSSQLProviderTest()
         {
+            _repo = new MSSQLProvider();
 
+            _repo.ClearTable("ContentTypes");
+            try
+            {
+                _repo.DeleteTable(TestContentType.Name);
+            }
+            catch { }
         }
+
+        private ContentType TestContentType => new ContentType
+        {
+            Name = "test",
+            Columns = new List<Column> {
+                new Column {
+                    Name = "column1",
+                    Type = "nvarchar"
+                },
+                new Column {
+                    Name = "column2",
+                    Type = "nvarchar"
+                },
+            }
+        };
 
         [Fact]
         public void CreateContentTypeTest()
         {
-            IRepository _repo = new MSSQLProvider();
-            var columns = new Dictionary<string, string>();
-            columns.Add("column1", "nvarchar");
-            columns.Add("column2", "nvarchar");
-            columns.Add("column3", "nvarchar");
-
-            var contentType = new ContentType
-            {
-                Name = "test",
-                Columns = JsonConvert.SerializeObject(columns)
-            };
-
-            _repo.CreateContentType(contentType);
+            _repo.CreateContentType(TestContentType);
+            Assert.Equal(1, _repo.GetAllContentTypes().Count);
         }
 
         [Fact]
         public void DeleteContentTypeTest()
         {
-            IRepository _repo = new MSSQLProvider();
-            _repo.DeleteContentType(1);
+            var id = _repo.CreateContentType(TestContentType);
+            _repo.DeleteContentType(id);
+            Assert.Equal(0, _repo.GetAllContentTypes().Count);
         }
 
         [Fact]
         public void GetContentTypeTest()
         {
-            IRepository _repo = new MSSQLProvider();
-            var contentType = _repo.GetContentType(2);
+            var id = _repo.CreateContentType(TestContentType);
+            var contentType = _repo.GetContentType(id);
 
+            Assert.NotNull(contentType);
             Assert.Equal("test", contentType.Name);
         }
 
         [Fact]
         public void GetAllContentTypesTest()
         {
-            IRepository _repo = new MSSQLProvider();
-            var contentTypes = _repo.GetAllContentTypes();
+            _repo.CreateContentType(TestContentType);
 
-            Assert.Equal(1, contentTypes.Count);
+            Assert.Equal(1, _repo.GetAllContentTypes().Count);
         }
     }
 }
